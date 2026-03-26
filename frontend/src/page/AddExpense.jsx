@@ -5,6 +5,7 @@ import "../styles/AddExpense.css";
 function AddExpense() {
 
   const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.id || 1; // ✅ FIX ADDED
 
   const [expense, setExpense] = useState({
     id: null,
@@ -23,8 +24,10 @@ function AddExpense() {
 
     try {
 
+      if (!userId) return; // ✅ SAFETY FIX
+
       const res = await axios.get(
-        `http://localhost:8080/api/expenses/user/${user.id}`
+        `http://localhost:8080/api/expenses/user/${userId}` // ✅ FIXED
       );
 
       setExpenses(res.data);
@@ -66,7 +69,7 @@ function AddExpense() {
           `http://localhost:8080/api/expenses/${expense.id}`,
           {
             ...expense,
-            userId: user.id
+            userId: userId // ✅ FIXED
           }
         );
 
@@ -78,7 +81,7 @@ function AddExpense() {
           "http://localhost:8080/api/expenses",
           {
             ...expense,
-            userId: user.id
+            userId: userId // ✅ FIXED
           }
         );
 

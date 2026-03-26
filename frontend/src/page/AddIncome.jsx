@@ -5,6 +5,7 @@ import "../styles/AddIncome.css";
 function AddIncome() {
 
   const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.id || 1; // ✅ FIX
 
   const [income, setIncome] = useState({
     source: "",
@@ -18,10 +19,15 @@ function AddIncome() {
   // Fetch Income
   const fetchIncome = async () => {
     try {
+
+      if (!userId) return; // ✅ SAFETY
+
       const res = await axios.get(
-        `http://localhost:8080/api/income/user/${user.id}`
+        `http://localhost:8080/api/income/user/${userId}`
       );
+
       setIncomeList(res.data);
+
     } catch (error) {
       console.error("Fetch income error:", error);
     }
@@ -39,7 +45,7 @@ function AddIncome() {
     });
   };
 
-  // ✅ FIXED SUBMIT
+  // Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -47,12 +53,11 @@ function AddIncome() {
 
       if (editId) {
 
-        // ✅ CORRECT PUT API
         await axios.put(
           `http://localhost:8080/api/income/${editId}`,
           {
             ...income,
-            userId: user.id
+            userId: userId // ✅ FIX
           }
         );
 
@@ -60,12 +65,11 @@ function AddIncome() {
 
       } else {
 
-        // ✅ CORRECT POST API
         await axios.post(
           "http://localhost:8080/api/income",
           {
             ...income,
-            userId: user.id
+            userId: userId // ✅ FIX
           }
         );
 
@@ -94,7 +98,7 @@ function AddIncome() {
     setEditId(item.id);
   };
 
-  // ✅ FIXED DELETE
+  // Delete
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this income?")) return;
 
@@ -174,31 +178,13 @@ function AddIncome() {
             {incomeList.length > 0 ? (
               incomeList.map((item) => (
                 <tr key={item.id}>
-
                   <td>{item.source}</td>
-
-                  <td className="income-amount">
-                    ₹ {item.amount}
-                  </td>
-
+                  <td className="income-amount">₹ {item.amount}</td>
                   <td>{item.date}</td>
-
                   <td>
-                    <button
-                      className="edit-btn"
-                      onClick={() => handleEdit(item)}
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      className="delete-btn"
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      Delete
-                    </button>
+                    <button onClick={() => handleEdit(item)}>Edit</button>
+                    <button onClick={() => handleDelete(item.id)}>Delete</button>
                   </td>
-
                 </tr>
               ))
             ) : (

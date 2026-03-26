@@ -33,7 +33,6 @@ function TransactionHistory() {
 
       const allTransactions = [...income, ...expense];
 
-      // Sort latest first if date exists
       allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
       setTransactions(allTransactions);
@@ -63,9 +62,7 @@ function TransactionHistory() {
 
             <div
               key={index}
-              className={`transaction-item ${
-                t.type === "Income" ? "income" : "expense"
-              }`}
+              className="transaction-item"  // ✅ FIXED HERE
             >
 
               <div className="transaction-left">

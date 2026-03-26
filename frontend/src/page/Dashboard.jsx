@@ -5,11 +5,11 @@ import "../styles/Dashboard.css";
 import AddExpense from "./AddExpense";
 import AddIncome from "./AddIncome";
 import Profile from "./Profile";
-import Reports from "./Reports";
 import Budget from "./Budget";
 import TransactionHistory from "./TransactionHistory";
 import AIAdvisor from "./AIAdvisor";
 import FinancialReport from "./FinancialReport";
+import Forum from "./Forum";
 
 import ExpenseBarChart from "./charts/ExpenseBarChart";
 import ExpenseBudgetChart from "./charts/ExpenseBudgetChart";
@@ -24,47 +24,69 @@ function Dashboard() {
   const [remainingBudget, setRemainingBudget] = useState(0);
   const [prediction, setPrediction] = useState(0);
 
+  const [userName, setUserName] = useState("");
+
   useEffect(() => {
     loadData();
     loadPrediction();
+    loadUser();
   }, []);
 
+  // USER
+  const loadUser = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user && user.name) {
+        setUserName(user.name);
+      } else {
+        const res = await axios.get("http://localhost:8080/api/profile");
+        setUserName(res.data.name);
+      }
+    } catch {
+      setUserName("User");
+    }
+  };
+
+  // DATA
   const loadData = async () => {
     try {
       const incomeRes = await axios.get("http://localhost:8080/api/income");
       const expenseRes = await axios.get("http://localhost:8080/api/expenses");
 
-      const income = incomeRes.data.reduce((sum, i) => sum + i.amount, 0);
-      const expense = expenseRes.data.reduce((sum, e) => sum + e.amount, 0);
+      const income = incomeRes.data.reduce((sum, i) => sum + Number(i.amount || 0), 0);
+      const expense = expenseRes.data.reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
       setTotalIncome(income);
       setTotalExpense(expense);
       setRemainingBudget(income - expense);
 
     } catch (err) {
-      console.log("Data load error", err);
+      console.log(err);
     }
   };
 
+  // ML
   const loadPrediction = async () => {
     try {
       const res = await axios.get("http://127.0.0.1:5001/predict-expense");
-
       if (res.data.status === "success") {
         setPrediction(res.data.predicted_expense);
       }
-    } catch (error) {
-      console.error("Prediction error:", error);
+    } catch {
       setPrediction(0);
     }
   };
 
   const getSuggestion = () => {
-    if (totalExpense > totalIncome)
-      return "⚠️ You are overspending!";
-    if (remainingBudget < totalIncome * 0.2)
-      return "⚠️ Savings are low";
+    if (totalExpense > totalIncome) return "⚠️ You are overspending!";
+    if (remainingBudget < totalIncome * 0.2) return "⚠️ Savings are low";
     return "✅ Good financial condition";
+  };
+
+  // ✅ LOGOUT
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    window.location.href = "/";
   };
 
   return (
@@ -82,6 +104,12 @@ function Dashboard() {
           <li onClick={() => setActiveModule("transactions")}>📜 Transactions</li>
           <li onClick={() => setActiveModule("advisor")}>🤖 AI Advisor</li>
           <li onClick={() => setActiveModule("reports")}>📄 Report</li>
+          <li onClick={() => setActiveModule("forum")}>💬 Forum</li>
+
+          {/* ✅ LOGOUT */}
+          <li onClick={handleLogout} style={{ color: "#f87171" }}>
+            🚪 Logout
+          </li>
         </ul>
       </div>
 
@@ -90,7 +118,10 @@ function Dashboard() {
 
         {activeModule === "dashboard" && (
           <>
-            {/* SUMMARY */}
+            <div className="welcome-box">
+              <h2>Welcome back, {userName || "User"} 👋</h2>
+            </div>
+
             <div className="card-container">
               <div className="summary-card income">
                 <h4>Total Income</h4>
@@ -108,23 +139,19 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* TREND */}
             <div className="module-box">
               <TrendChart />
             </div>
 
-            {/* 🔥 FIXED ALIGNMENT ROW */}
             <div className="chart-row">
               <div className="module-box">
                 <ExpenseBarChart />
               </div>
-
               <div className="module-box">
                 <ExpenseBudgetChart />
               </div>
             </div>
 
-            {/* AI SECTION */}
             <div className="ai-section">
               <div className="ai-box">
                 <h3>🤖 AI Suggestion</h3>
@@ -132,7 +159,7 @@ function Dashboard() {
               </div>
 
               <div className="ai-box">
-                <h3>📈 Next Month Prediction</h3>
+                <h3>📈 Prediction</h3>
                 <p>₹ {prediction}</p>
               </div>
             </div>
@@ -145,7 +172,16 @@ function Dashboard() {
         {activeModule === "budget" && <Budget />}
         {activeModule === "transactions" && <TransactionHistory />}
         {activeModule === "advisor" && <AIAdvisor />}
-        {activeModule === "reports" && <FinancialReport />}
+        {activeModule === "forum" && <Forum />}
+
+        {/* ✅ REPORT */}
+        {activeModule === "reports" && (
+          <FinancialReport
+            totalIncome={totalIncome}
+            totalExpense={totalExpense}
+            prediction={prediction}
+          />
+        )}
 
       </div>
     </div>

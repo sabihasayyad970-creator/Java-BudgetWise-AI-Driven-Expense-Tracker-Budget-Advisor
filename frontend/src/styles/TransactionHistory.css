@@ -63,17 +63,10 @@
 .transaction-amount {
   font-weight: 600;
   font-size: 15px;
+  color: #333;
 }
 
 .transaction-date {
   font-size: 12px;
   color: #888;
-}
-
-.income .transaction-amount {
-  color: #2ecc71;
-}
-
-.expense .transaction-amount {
-  color: #e74c3c;
 }
