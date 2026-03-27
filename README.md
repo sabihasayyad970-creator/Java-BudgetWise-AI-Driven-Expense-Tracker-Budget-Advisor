@@ -34,7 +34,7 @@ python ml_api.py
 - Machine Learning/AI
 
 ## Team Members
-Sayyad Sabiha
+Sayyad Sabiha  
 Mutla Sravya
 
 ## Future Enhancements
