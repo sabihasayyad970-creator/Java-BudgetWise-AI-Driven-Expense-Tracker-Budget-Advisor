@@ -16,25 +16,28 @@ public class Profile {
     private Double savingsGoal;
     private Double targetExpense;
 
-    @OneToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    // ✅ FIXED (important)
+    @OneToOne(optional = false)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    // Getters & Setters
+    // ===== GETTERS =====
     public Long getId() { return id; }
 
     public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
-
     public String getPhoto() { return photo; }
-    public void setPhoto(String photo) { this.photo = photo; }
 
     public Double getSavingsGoal() { return savingsGoal; }
-    public void setSavingsGoal(Double savingsGoal) { this.savingsGoal = savingsGoal; }
-
     public Double getTargetExpense() { return targetExpense; }
-    public void setTargetExpense(Double targetExpense) { this.targetExpense = targetExpense; }
 
     public User getUser() { return user; }
+
+    // ===== SETTERS =====
+    public void setPhone(String phone) { this.phone = phone; }
+    public void setPhoto(String photo) { this.photo = photo; }
+
+    public void setSavingsGoal(Double savingsGoal) { this.savingsGoal = savingsGoal; }
+    public void setTargetExpense(Double targetExpense) { this.targetExpense = targetExpense; }
+
     public void setUser(User user) { this.user = user; }
 }

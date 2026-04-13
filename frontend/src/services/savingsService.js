@@ -2,22 +2,27 @@ import axios from "axios";
 
 const API_URL = "http://localhost:8080/api/savings";
 
-/* GET ALL SAVINGS / GOALS */
-export const getSavings = () => {
-  return axios.get(API_URL);
+// ✅ FIXED TOKEN
+const getAuthHeader = () => {
+  const token = localStorage.getItem("token");
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  };
 };
 
-/* SAME FUNCTION USED BY SavingsGoal.jsx */
-export const getGoals = () => {
-  return axios.get(API_URL);
+// ✅ GET USER-SPECIFIC GOALS
+export const getGoals = (userId) => {
+  return axios.get(`${API_URL}/user/${userId}`, getAuthHeader());
 };
 
-/* CREATE GOAL */
+// ✅ Create goal
 export const createGoal = (goal) => {
-  return axios.post(API_URL, goal);
+  return axios.post(API_URL, goal, getAuthHeader());
 };
 
-/* DELETE GOAL */
+// ✅ Delete goal
 export const deleteGoal = (id) => {
-  return axios.delete(`${API_URL}/${id}`);
+  return axios.delete(`${API_URL}/${id}`, getAuthHeader());
 };

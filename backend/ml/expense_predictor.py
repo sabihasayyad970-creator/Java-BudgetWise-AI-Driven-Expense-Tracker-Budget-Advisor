@@ -2,24 +2,29 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 import requests
 
-def fetch_expenses():
+def fetch_expenses(user_id):
     try:
-        res = requests.get("http://localhost:8080/api/expenses")
+        res = requests.get(f"http://localhost:8080/api/expenses/user/{user_id}")
         data = res.json()
 
-        # sort by date
+        data = [e for e in data if e.get("amount") is not None and e.get("date")]
         data = sorted(data, key=lambda x: x["date"])
 
-        expenses = [e["amount"] for e in data]
+        expenses = [float(e["amount"]) for e in data]
 
-        return expenses if len(expenses) > 1 else [10000, 12000, 15000]
+        if len(expenses) < 2:
+            return [10000, 12000, 15000]
+
+        return expenses
 
     except:
-        return [10000, 12000, 15000, 18000]
+        return [10000, 12000, 15000]
 
+def predict_next_expense(user_id):
+    expenses = fetch_expenses(user_id)
 
-def predict_next_expense():
-    expenses = fetch_expenses()
+    if len(expenses) < 2:
+        return sum(expenses) / len(expenses)
 
     months = np.arange(1, len(expenses) + 1).reshape(-1, 1)
     expenses = np.array(expenses)
@@ -31,4 +36,4 @@ def predict_next_expense():
 
     prediction = model.predict(next_month)
 
-    return round(prediction[0], 2)
+    return max(round(prediction[0], 2), 0)

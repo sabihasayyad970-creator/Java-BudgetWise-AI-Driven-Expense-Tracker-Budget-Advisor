@@ -1,52 +1,78 @@
 import React, { useEffect, useState } from "react";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#A28EFF"];
-
-const ExpenseChart = () => {
+const TrendChart = () => {
   const [data, setData] = useState([]);
 
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const userId = user?.id;
+
   useEffect(() => {
-    fetch("http://localhost:8080/api/expenses")
-      .then(res => res.json())
-      .then(result => {
-        const grouped = {};
 
-        result.forEach(item => {
-          const category = item.category || "Other";
+    if (!userId) return;
 
-          if (!grouped[category]) {
-            grouped[category] = 0;
-          }
+    Promise.all([
+      fetch(`http://localhost:8080/api/expenses/user/${userId}`),
+      fetch(`http://localhost:8080/api/income/user/${userId}`)
+    ])
+      .then(async ([expenseRes, incomeRes]) => {
+        const expenses = await expenseRes.json();
+        const incomes = await incomeRes.json();
 
-          grouped[category] += item.amount;
+        const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+        const monthlyExpense = {};
+        const monthlyIncome = {};
+
+        months.forEach(m => {
+          monthlyExpense[m] = 0;
+          monthlyIncome[m] = 0;
         });
 
-        const chartData = Object.keys(grouped).map(key => ({
-          name: key,
-          value: grouped[key]
+        expenses.forEach(item => {
+          if (item.date) {
+            const month = new Date(item.date).toLocaleString("default", { month: "short" });
+            if (monthlyExpense[month] !== undefined) {
+              monthlyExpense[month] += Number(item.amount || 0);
+            }
+          }
+        });
+
+        incomes.forEach(item => {
+          if (item.date) {
+            const month = new Date(item.date).toLocaleString("default", { month: "short" });
+            if (monthlyIncome[month] !== undefined) {
+              monthlyIncome[month] += Number(item.amount || 0);
+            }
+          }
+        });
+
+        const chartData = months.map(m => ({
+          name: m,
+          income: monthlyIncome[m],
+          expense: monthlyExpense[m]
         }));
 
         setData(chartData);
       });
-  }, []);
+
+  }, [userId]);
 
   return (
-    <div style={{ width: "100%", height: 300 }}>
-      <h3>Expense Distribution</h3>
+    <div style={{ width: "100%", height: 320 }}>
+      <h3>Income vs Expense Trend</h3>
       <ResponsiveContainer>
-        <PieChart>
-          <Pie data={data} dataKey="value" outerRadius={100} label>
-            {data.map((entry, index) => (
-              <Cell key={index} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
+        <LineChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" interval={0} />
+          <YAxis />
           <Tooltip formatter={(value) => `₹${value}`} />
-          <Legend />
-        </PieChart>
+          <Line type="monotone" dataKey="income" stroke="green" strokeWidth={3} />
+          <Line type="monotone" dataKey="expense" stroke="blue" strokeWidth={3} />
+        </LineChart>
       </ResponsiveContainer>
     </div>
   );
 };
 
-export default ExpenseChart;
+export default TrendChart;

@@ -1,32 +1,58 @@
 import React, { useState, useEffect } from "react";
 import "../styles/Budget.css";
 import { getBudgets, createBudget, deleteBudget } from "../services/budgetService";
-import { getSavings } from "../services/savingsService";
+import { getGoals } from "../services/savingsService";
 
 function Budget() {
 
   const [budgets, setBudgets] = useState([]);
   const [savingsGoals, setSavingsGoals] = useState([]);
-
   const [category, setCategory] = useState("");
   const [monthlyLimit, setMonthlyLimit] = useState("");
   const [spentAmount, setSpentAmount] = useState("");
 
+  const getUser = () => {
+    const data = localStorage.getItem("user");
+    return data ? JSON.parse(data) : null;
+  };
+
   useEffect(() => {
-    loadBudgets();
-    loadSavings();
+    const user = getUser();
+
+    if (!user || !user.email) return;
+
+    loadBudgets(user.email);
+    loadSavings(user.id);
+
   }, []);
 
-  const loadBudgets = () => {
-    getBudgets().then((res) => setBudgets(res.data));
+  const loadBudgets = async (email) => {
+    try {
+      const res = await getBudgets(email);
+      setBudgets(res?.data || []);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const loadSavings = () => {
-    getSavings().then((res) => setSavingsGoals(res.data));
+  const loadSavings = async (userId) => {
+    try {
+      const res = await getGoals(userId);
+      setSavingsGoals(res?.data || []);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const user = getUser();
+
+    if (!user || !user.email) {
+      alert("User not logged in ❌");
+      return;
+    }
 
     if (!category || !monthlyLimit || !spentAmount) {
       alert("Please fill all fields");
@@ -34,26 +60,39 @@ function Budget() {
     }
 
     if (Number(spentAmount) > Number(monthlyLimit)) {
-      alert("Spent amount cannot exceed monthly limit");
+      alert("Spent cannot exceed limit");
       return;
     }
 
-    const budget = {
-      category,
-      monthlyLimit: Number(monthlyLimit),
-      spentAmount: Number(spentAmount)
-    };
+    try {
 
-    createBudget(budget).then(() => {
+      await createBudget(
+        {
+          category,
+          monthlyLimit: Number(monthlyLimit),
+          spentAmount: Number(spentAmount),
+        },
+        user.email   // ✅ IMPORTANT
+      );
+
+      alert("Budget Added Successfully ✅");
+
       setCategory("");
       setMonthlyLimit("");
       setSpentAmount("");
-      loadBudgets();
-    });
+
+      loadBudgets(user.email);
+
+    } catch (err) {
+      console.error(err);
+      alert("Failed ❌");
+    }
   };
 
-  const removeBudget = (id) => {
-    deleteBudget(id).then(() => loadBudgets());
+  const removeBudget = async (id) => {
+    const user = getUser();
+    await deleteBudget(id);
+    loadBudgets(user.email);
   };
 
   return (
@@ -61,7 +100,6 @@ function Budget() {
 
       <h2>Budget</h2>
 
-      {/* Add Budget Form */}
       <form className="budget-form" onSubmit={handleSubmit}>
 
         <input
@@ -88,79 +126,53 @@ function Budget() {
 
       </form>
 
-
-      {/* Monthly Budget Section */}
-
       <div className="budget-section">
-
         <h3>Monthly Budget</h3>
 
-        {budgets.map((b) => {
+        {budgets.length === 0 ? (
+          <p>No budgets added yet</p>
+        ) : (
+          budgets.map((b) => {
+            const remaining = b.monthlyLimit - b.spentAmount;
 
-          const remaining = b.monthlyLimit - b.spentAmount;
+            return (
+              <div className="budget-card" key={b.id}>
+                <div className="budget-info">
+                  <h4>{b.category}</h4>
+                  <p className="remaining">₹ {remaining} remaining</p>
+                </div>
 
-          return (
-
-            <div className="budget-card" key={b.id}>
-
-              <div className="budget-info">
-
-                <h4>
-                  {b.category.charAt(0).toUpperCase() + b.category.slice(1)}
-                </h4>
-
-                <p className="remaining">
-                  ₹ {remaining} remaining
-                </p>
-
+                <button
+                  className="delete-btn"
+                  onClick={() => removeBudget(b.id)}
+                >
+                  Delete
+                </button>
               </div>
-
-              <button
-                className="delete-btn"
-                onClick={() => removeBudget(b.id)}
-              >
-                Delete
-              </button>
-
-            </div>
-
-          );
-
-        })}
-
+            );
+          })
+        )}
       </div>
 
-
-      {/* Savings Goals Section */}
-
       <div className="budget-section">
-
         <h3>Savings Goals</h3>
 
-        {savingsGoals.map((goal) => {
+        {savingsGoals.length === 0 ? (
+          <p>No savings goals</p>
+        ) : (
+          savingsGoals.map((goal) => {
+            const remaining = goal.targetAmount - goal.savedAmount;
 
-          const remaining = goal.targetAmount - goal.savedAmount;
-
-          return (
-
-            <div className="budget-card" key={goal.id}>
-
-              <div className="budget-info">
-
-                <h4>{goal.goalName}</h4>
-
-                <p className="remaining">
-                  ₹ {remaining} remaining
-                </p>
-
+            return (
+              <div className="budget-card" key={goal.id}>
+                <div className="budget-info">
+                  <h4>{goal.goalName}</h4>
+                  <p className="remaining">₹ {remaining} remaining</p>
+                </div>
               </div>
-
-            </div>
-
-          );
-
-        })}
-
+            );
+          })
+        )}
       </div>
 
     </div>

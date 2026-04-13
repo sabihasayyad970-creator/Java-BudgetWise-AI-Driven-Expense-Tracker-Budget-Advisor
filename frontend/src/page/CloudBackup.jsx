@@ -2,11 +2,26 @@ import axios from "axios";
 
 function CloudBackup() {
 
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.id;
+
   const downloadBackup = async () => {
     try {
-      const res = await axios.get("http://localhost:8080/api/export-data");
 
-      const dataStr = JSON.stringify(res.data, null, 2);
+      const incomeRes = await axios.get(
+        `http://localhost:8080/api/income/user/${userId}`
+      );
+
+      const expenseRes = await axios.get(
+        `http://localhost:8080/api/expenses/user/${userId}`
+      );
+
+      const data = {
+        income: incomeRes.data,
+        expenses: expenseRes.data
+      };
+
+      const dataStr = JSON.stringify(data, null, 2);
 
       const blob = new Blob([dataStr], { type: "application/json" });
       const url = window.URL.createObjectURL(blob);
@@ -16,7 +31,7 @@ function CloudBackup() {
       a.download = "BudgetWise_Backup.json";
       a.click();
 
-      alert("✅ Backup file downloaded! Upload it to Google Drive.");
+      alert("✅ Backup file downloaded!");
 
     } catch (error) {
       console.error("Backup error:", error);

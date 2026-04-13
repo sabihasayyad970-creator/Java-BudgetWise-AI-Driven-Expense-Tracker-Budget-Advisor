@@ -2,6 +2,10 @@ package com.budgetwise.backend.repository;
 
 import com.budgetwise.backend.entity.Budget;
 import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
 
 public interface BudgetRepository extends JpaRepository<Budget, Long> {
+
+    // ✅ THIS METHOD IS REQUIRED
+    List<Budget> findByUserEmail(String userEmail);
 }

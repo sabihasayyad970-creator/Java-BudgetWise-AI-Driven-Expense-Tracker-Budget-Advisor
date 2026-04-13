@@ -1,15 +1,18 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/budgets";
+const API = "http://localhost:8080/api/budgets";
 
-export const getBudgets = () => {
-  return axios.get(API_URL);
+// ✅ GET USER BUDGETS
+export const getBudgets = (email) => {
+  return axios.get(`${API}/user/${email}`);
 };
 
-export const createBudget = (budget) => {
-  return axios.post(API_URL, budget);
+// ✅ CREATE BUDGET (🔥 FIXED: send email as PARAM)
+export const createBudget = (data, email) => {
+  return axios.post(`${API}?email=${email}`, data);
 };
 
+// ✅ DELETE
 export const deleteBudget = (id) => {
-  return axios.delete(`${API_URL}/${id}`);
+  return axios.delete(`${API}/${id}`);
 };

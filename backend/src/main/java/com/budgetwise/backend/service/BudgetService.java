@@ -2,6 +2,7 @@ package com.budgetwise.backend.service;
 
 import com.budgetwise.backend.entity.Budget;
 import com.budgetwise.backend.repository.BudgetRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,12 +18,8 @@ public class BudgetService {
         return budgetRepository.save(budget);
     }
 
-    public List<Budget> getAllBudgets() {
-        return budgetRepository.findAll();
-    }
-
-    public Budget getBudgetById(Long id) {
-        return budgetRepository.findById(id).orElse(null);
+    public List<Budget> getBudgetsByUser(String userEmail) {
+        return budgetRepository.findByUserEmail(userEmail);
     }
 
     public void deleteBudget(Long id) {

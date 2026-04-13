@@ -13,19 +13,14 @@ function Login() {
 
   const [message, setMessage] = useState("");
 
-  // Handle input change
   const handleChange = (e) => {
-
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
-
   };
 
-  // Handle login
   const handleSubmit = async (e) => {
-
     e.preventDefault();
 
     try {
@@ -43,8 +38,8 @@ function Login() {
 
       const data = await response.json();
 
-      // Success login
-      if (response.ok && data.token) {
+      // ✅ SAFETY CHECK (important)
+      if (response.ok && data.token && data.id) {
 
         const user = {
           id: data.id,
@@ -53,33 +48,24 @@ function Login() {
           token: data.token
         };
 
-        // Save user in localStorage
         localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("token", data.token);
 
         setMessage("Login successful!");
-
-        // Redirect to dashboard
         navigate("/dashboard");
 
       } else {
-
-        setMessage("Invalid email or password");
-
+        setMessage(data.message || "Invalid email or password");
       }
 
     } catch (error) {
-
       console.error("Login error:", error);
       setMessage("Server error. Please try again.");
-
     }
-
   };
 
   return (
-
     <div className="auth-container">
-
       <div className="auth-card">
 
         <h2>Welcome Back</h2>
@@ -107,29 +93,21 @@ function Login() {
             required
           />
 
-          <button
-            type="submit"
-            className="auth-button"
-          >
+          <button type="submit" className="auth-button">
             Login
           </button>
 
         </form>
 
-        {message && (
-          <p className="auth-message">{message}</p>
-        )}
+        {message && <p className="auth-message">{message}</p>}
 
         <div className="auth-link">
           Don't have account? <Link to="/signup">Sign Up</Link>
         </div>
 
       </div>
-
     </div>
-
   );
-
 }
 
 export default Login;

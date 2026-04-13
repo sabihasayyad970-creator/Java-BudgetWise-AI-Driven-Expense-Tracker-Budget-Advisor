@@ -2,10 +2,19 @@ import axios from "axios";
 
 function ExportCSV() {
 
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.id;
+
   const downloadCSV = async () => {
     try {
-      const incomeRes = await axios.get("http://localhost:8080/api/income");
-      const expenseRes = await axios.get("http://localhost:8080/api/expenses");
+
+      const incomeRes = await axios.get(
+        `http://localhost:8080/api/income/user/${userId}`
+      );
+
+      const expenseRes = await axios.get(
+        `http://localhost:8080/api/expenses/user/${userId}`
+      );
 
       let csv = "Type,Amount,Date\n";
 

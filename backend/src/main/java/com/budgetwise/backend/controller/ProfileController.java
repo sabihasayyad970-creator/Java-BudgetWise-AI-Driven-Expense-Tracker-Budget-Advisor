@@ -1,29 +1,54 @@
 package com.budgetwise.backend.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
 import com.budgetwise.backend.entity.Profile;
-import com.budgetwise.backend.service.ProfileService;
+import com.budgetwise.backend.entity.User;
+import com.budgetwise.backend.repository.ProfileRepository;
+import com.budgetwise.backend.repository.UserRepository;
+import com.budgetwise.backend.security.JwtUtil;
+
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/profile")
 @CrossOrigin(origins = "*")
 public class ProfileController {
 
-    @Autowired
-    private ProfileService profileService;
+    private final ProfileRepository profileRepository;
+    private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
-    // ✅ GET Profile
-    @GetMapping("/{userId}")
-    public Profile getProfile(@PathVariable Long userId) {
-        return profileService.getProfile(userId);
+    public ProfileController(ProfileRepository profileRepository,
+                             UserRepository userRepository,
+                             JwtUtil jwtUtil) {
+        this.profileRepository = profileRepository;
+        this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
     }
 
-    // ✅ CREATE / UPDATE Profile
-    @PutMapping("/{userId}")
-    public String saveProfile(@PathVariable Long userId,
-                              @RequestBody Profile profile) {
-        return profileService.saveOrUpdateProfile(userId, profile);
+    // ✅ GET PROFILE
+    @GetMapping
+    public Profile getProfile(@RequestHeader("Authorization") String token) {
+
+        String email = jwtUtil.extractUsername(token.substring(7));
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return profileRepository.findByUser_Id(user.getId()).orElse(null);
+    }
+
+    // ✅ UPDATE PROFILE
+    @PostMapping
+    public Profile saveProfile(@RequestBody Profile profile,
+                              @RequestHeader("Authorization") String token) {
+
+        String email = jwtUtil.extractUsername(token.substring(7));
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        profile.setUser(user);
+
+        return profileRepository.save(profile);
     }
 }

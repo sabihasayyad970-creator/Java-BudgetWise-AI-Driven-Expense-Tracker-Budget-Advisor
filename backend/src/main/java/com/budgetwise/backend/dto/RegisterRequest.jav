@@ -1,30 +1,35 @@
 package com.budgetwise.backend.dto;
 
-public class RegisterRequest {
+public class SavingsGoalDTO {
 
-    private String name;
-    private String email;
-    private String password;
+    private String goalName;
+    private double targetAmount;
+    private double savedAmount;
 
-    public RegisterRequest() {}
-
-    public String getName() {
-        return name;
+    public SavingsGoalDTO() {
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public String getGoalName() {
+        return goalName;
     }
 
-    public String getEmail() {
-        return email;
+    public void setGoalName(String goalName) {
+        this.goalName = goalName;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public double getTargetAmount() {
+        return targetAmount;
     }
 
-    public String getPassword() {
-        return password;
+    public void setTargetAmount(double targetAmount) {
+        this.targetAmount = targetAmount;
+    }
+
+    public double getSavedAmount() {
+        return savedAmount;
+    }
+
+    public void setSavedAmount(double savedAmount) {
+        this.savedAmount = savedAmount;
     }
 }

@@ -4,6 +4,9 @@ import "../styles/Reports.css";
 
 function Reports() {
 
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.id;
+
   const [income, setIncome] = useState([]);
   const [expenses, setExpenses] = useState([]);
 
@@ -11,15 +14,23 @@ function Reports() {
   const [totalExpense, setTotalExpense] = useState(0);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (userId) {
+      loadData();
+    }
+  }, [userId]);
 
   const loadData = async () => {
 
     try {
 
-      const incomeRes = await axios.get("http://localhost:8080/api/income");
-      const expenseRes = await axios.get("http://localhost:8080/api/expenses");
+      // ✅ USER-SPECIFIC APIs
+      const incomeRes = await axios.get(
+        `http://localhost:8080/api/income/user/${userId}`
+      );
+
+      const expenseRes = await axios.get(
+        `http://localhost:8080/api/expenses/user/${userId}`
+      );
 
       setIncome(incomeRes.data);
       setExpenses(expenseRes.data);

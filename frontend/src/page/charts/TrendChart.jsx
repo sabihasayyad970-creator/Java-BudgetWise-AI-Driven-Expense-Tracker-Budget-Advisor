@@ -1,32 +1,26 @@
 import React, { useEffect, useState } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  ResponsiveContainer
-} from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 
 const TrendChart = () => {
   const [data, setData] = useState([]);
 
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const userId = user?.id;
+
   useEffect(() => {
+
+    if (!userId) return;
+
     Promise.all([
-      fetch("http://localhost:8080/api/expenses"),
-      fetch("http://localhost:8080/api/income")
+      fetch(`http://localhost:8080/api/expenses/user/${userId}`),
+      fetch(`http://localhost:8080/api/income/user/${userId}`)
     ])
       .then(async ([expenseRes, incomeRes]) => {
         const expenses = await expenseRes.json();
         const incomes = await incomeRes.json();
 
-        const months = [
-          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-        ];
+        const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-        // Initialize all months
         const monthlyExpense = {};
         const monthlyIncome = {};
 
@@ -35,33 +29,24 @@ const TrendChart = () => {
           monthlyIncome[m] = 0;
         });
 
-        // Process Expenses
         expenses.forEach(item => {
           if (item.date) {
-            const month = new Date(item.date).toLocaleString("default", {
-              month: "short"
-            });
-
+            const month = new Date(item.date).toLocaleString("default", { month: "short" });
             if (monthlyExpense[month] !== undefined) {
-              monthlyExpense[month] += item.amount;
+              monthlyExpense[month] += Number(item.amount || 0);
             }
           }
         });
 
-        // Process Income
         incomes.forEach(item => {
           if (item.date) {
-            const month = new Date(item.date).toLocaleString("default", {
-              month: "short"
-            });
-
+            const month = new Date(item.date).toLocaleString("default", { month: "short" });
             if (monthlyIncome[month] !== undefined) {
-              monthlyIncome[month] += item.amount;
+              monthlyIncome[month] += Number(item.amount || 0);
             }
           }
         });
 
-        // Combine both
         const chartData = months.map(m => ({
           name: m,
           income: monthlyIncome[m],
@@ -69,42 +54,24 @@ const TrendChart = () => {
         }));
 
         setData(chartData);
-      })
-      .catch(err => console.error("Trend chart error:", err));
-  }, []);
+      });
+
+  }, [userId]);
 
   return (
-    <div style={{ width: "100%", height: 320 }}>
-      <h3>📈 Income vs Expense Trend (Yearly)</h3>
-
-      <ResponsiveContainer>
-        <LineChart data={data}>
+    <div style={{ width: "100%", height: 300 }}>
+      <h3>Income vs Expense Trend</h3>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ right: 20 }}>
           <CartesianGrid strokeDasharray="3 3" />
-
-          {/* Show all months */}
-          <XAxis dataKey="name" interval={0} />
-
+          
+          {/* ✅ FIX: show all months including Dec */}
+          <XAxis dataKey="name" interval={0} angle={-20} textAnchor="end" />
+          
           <YAxis />
-
           <Tooltip formatter={(value) => `₹${value}`} />
-
-          {/* 🟢 Income Line */}
-          <Line
-            type="monotone"
-            dataKey="income"
-            stroke="green"
-            strokeWidth={3}
-            dot={{ r: 4 }}
-          />
-
-          {/* 🔵 Expense Line */}
-          <Line
-            type="monotone"
-            dataKey="expense"
-            stroke="blue"
-            strokeWidth={3}
-            dot={{ r: 4 }}
-          />
+          <Line type="monotone" dataKey="income" stroke="green" strokeWidth={3} />
+          <Line type="monotone" dataKey="expense" stroke="blue" strokeWidth={3} />
         </LineChart>
       </ResponsiveContainer>
     </div>

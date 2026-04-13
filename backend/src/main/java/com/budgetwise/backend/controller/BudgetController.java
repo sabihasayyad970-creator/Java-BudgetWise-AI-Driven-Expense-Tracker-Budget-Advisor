@@ -2,6 +2,7 @@ package com.budgetwise.backend.controller;
 
 import com.budgetwise.backend.entity.Budget;
 import com.budgetwise.backend.service.BudgetService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,25 +16,25 @@ public class BudgetController {
     @Autowired
     private BudgetService budgetService;
 
-    // Create Budget
+    // ✅ CREATE BUDGET (🔥 VERY IMPORTANT FIX)
     @PostMapping
-    public Budget createBudget(@RequestBody Budget budget) {
+    public Budget createBudget(
+            @RequestBody Budget budget,
+            @RequestParam String email
+    ) {
+        // 🔥 THIS LINE IS MOST IMPORTANT
+        budget.setUserEmail(email);
+
         return budgetService.createBudget(budget);
     }
 
-    // Get All Budgets
-    @GetMapping
-    public List<Budget> getAllBudgets() {
-        return budgetService.getAllBudgets();
+    // ✅ GET USER BUDGETS
+    @GetMapping("/user/{email}")
+    public List<Budget> getBudgetsByUser(@PathVariable String email) {
+        return budgetService.getBudgetsByUser(email);
     }
 
-    // Get Budget by ID
-    @GetMapping("/{id}")
-    public Budget getBudgetById(@PathVariable Long id) {
-        return budgetService.getBudgetById(id);
-    }
-
-    // Delete Budget
+    // ✅ DELETE
     @DeleteMapping("/{id}")
     public void deleteBudget(@PathVariable Long id) {
         budgetService.deleteBudget(id);

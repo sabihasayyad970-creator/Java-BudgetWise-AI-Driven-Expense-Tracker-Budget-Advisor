@@ -21,78 +21,125 @@ function Dashboard() {
 
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);
+  const [totalBudget, setTotalBudget] = useState(0);
   const [remainingBudget, setRemainingBudget] = useState(0);
   const [prediction, setPrediction] = useState(0);
 
   const [userName, setUserName] = useState("");
 
-  useEffect(() => {
-    loadData();
-    loadPrediction();
-    loadUser();
-  }, []);
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const userId = user?.id;
+  const userEmail = user?.email;
 
-  // USER
-  const loadUser = async () => {
-    try {
-      const user = JSON.parse(localStorage.getItem("user"));
-      if (user && user.name) {
-        setUserName(user.name);
-      } else {
-        const res = await axios.get("http://localhost:8080/api/profile");
-        setUserName(res.data.name);
+  // ✅ FINAL FIX: AUTO REFRESH DASHBOARD
+  useEffect(() => {
+
+    if (userId && userEmail) {
+      loadData();
+      loadPrediction();
+    }
+
+    loadUser();
+
+    // 🔥 AUTO REFRESH EVERY 2 SECONDS
+    const interval = setInterval(() => {
+      if (userId && userEmail) {
+        loadData();
       }
-    } catch {
+    }, 2000);
+
+    return () => clearInterval(interval);
+
+  }, [userId, userEmail]);
+
+  const loadUser = () => {
+    if (user && user.name) {
+      setUserName(user.name);
+    } else {
       setUserName("User");
     }
   };
 
-  // DATA
   const loadData = async () => {
     try {
-      const incomeRes = await axios.get("http://localhost:8080/api/income");
-      const expenseRes = await axios.get("http://localhost:8080/api/expenses");
 
-      const income = incomeRes.data.reduce((sum, i) => sum + Number(i.amount || 0), 0);
-      const expense = expenseRes.data.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+      // ✅ INCOME
+      const incomeRes = await axios.get(
+        `http://localhost:8080/api/income/user/${userId}`
+      );
 
+      const income = (incomeRes.data || []).reduce(
+        (sum, i) => sum + Number(i.amount || 0), 0
+      );
+
+      // ✅ EXPENSE
+      const expenseRes = await axios.get(
+        `http://localhost:8080/api/expenses/user/${userId}`
+      );
+
+      const expense = (expenseRes.data || []).reduce(
+        (sum, e) => sum + Number(e.amount || 0), 0
+      );
+
+      // ✅ BUDGET
+      const budgetRes = await axios.get(
+        `http://localhost:8080/api/budgets/user/${userEmail}`
+      );
+
+      console.log("Budget Data:", budgetRes.data); // debug
+
+      const totalBudgetValue = (budgetRes.data || []).reduce(
+        (sum, b) => sum + Number(b.monthlyLimit || 0), 0
+      );
+
+      // ✅ SET VALUES
       setTotalIncome(income);
       setTotalExpense(expense);
-      setRemainingBudget(income - expense);
+      setTotalBudget(totalBudgetValue);
+
+      // ✅ FINAL SAVINGS CALCULATION
+      const remaining = totalBudgetValue - expense;
+      setRemainingBudget(remaining);
 
     } catch (err) {
-      console.log(err);
+      console.log("Dashboard Error:", err);
     }
   };
 
-  // ML
   const loadPrediction = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:5001/predict-expense");
+
+      if (!userId) return;
+
+      const res = await axios.get(
+        `http://127.0.0.1:5001/predict-expense/${userId}`
+      );
+
       if (res.data.status === "success") {
         setPrediction(res.data.predicted_expense);
       }
-    } catch {
+
+    } catch (err) {
+      console.log("Prediction error:", err);
       setPrediction(0);
     }
   };
 
   const getSuggestion = () => {
-    if (totalExpense > totalIncome) return "⚠️ You are overspending!";
-    if (remainingBudget < totalIncome * 0.2) return "⚠️ Savings are low";
-    return "✅ Good financial condition";
+    if (totalExpense > totalBudget) return "⚠️ You exceeded your budget!";
+    if (remainingBudget < totalBudget * 0.2) return "⚠️ Budget almost finished";
+    return "✅ Good budget management";
   };
 
-  // ✅ LOGOUT
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
     window.location.href = "/";
   };
 
   return (
     <div className="dashboard-container">
 
-      {/* SIDEBAR */}
       <div className="sidebar">
         <h2>BudgetWise</h2>
         <ul>
@@ -105,15 +152,10 @@ function Dashboard() {
           <li onClick={() => setActiveModule("advisor")}>🤖 AI Advisor</li>
           <li onClick={() => setActiveModule("reports")}>📄 Report</li>
           <li onClick={() => setActiveModule("forum")}>💬 Forum</li>
-
-          {/* ✅ LOGOUT */}
-          <li onClick={handleLogout} style={{ color: "#f87171" }}>
-            🚪 Logout
-          </li>
+          <li onClick={handleLogout} style={{ color: "#f87171" }}>🚪 Logout</li>
         </ul>
       </div>
 
-      {/* MAIN */}
       <div className="main-content">
 
         {activeModule === "dashboard" && (
@@ -134,7 +176,12 @@ function Dashboard() {
               </div>
 
               <div className="summary-card budget">
-                <h4>Remaining</h4>
+                <h4>Total Budget</h4>
+                <h2>₹ {totalBudget}</h2>
+              </div>
+
+              <div className="summary-card budget">
+                <h4>Savings</h4>
                 <h2>₹ {remainingBudget}</h2>
               </div>
             </div>
@@ -174,7 +221,6 @@ function Dashboard() {
         {activeModule === "advisor" && <AIAdvisor />}
         {activeModule === "forum" && <Forum />}
 
-        {/* ✅ REPORT */}
         {activeModule === "reports" && (
           <FinancialReport
             totalIncome={totalIncome}

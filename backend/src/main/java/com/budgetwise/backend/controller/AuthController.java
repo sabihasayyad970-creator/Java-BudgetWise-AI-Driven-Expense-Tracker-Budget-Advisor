@@ -19,13 +19,16 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
-    // SIGNUP
+    // ✅ SIGNUP (FIXED: returns JSON instead of String)
     @PostMapping("/signup")
-    public String registerUser(@RequestBody User user) {
-        return userService.signupUser(user);
+    public AuthResponse registerUser(@RequestBody User user) {
+
+        String result = userService.signupUser(user);
+
+        return new AuthResponse(result); // ✅ return JSON
     }
 
-    // LOGIN
+    // ✅ LOGIN (no change needed)
     @PostMapping("/login")
     public AuthResponse loginUser(@RequestBody User user) {
 

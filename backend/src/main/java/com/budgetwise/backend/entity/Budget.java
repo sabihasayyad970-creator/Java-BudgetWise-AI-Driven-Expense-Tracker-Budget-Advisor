@@ -10,20 +10,20 @@ public class Budget {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String category;
 
+    @Column(name = "monthly_limit", nullable = false)
     private double monthlyLimit;
 
+    @Column(name = "spent_amount", nullable = false)
     private double spentAmount;
 
-    public Budget() {
-    }
+    // ✅ IMPORTANT FIX
+    @Column(name = "user_email", nullable = false)
+    private String userEmail;
 
-    public Budget(String category, double monthlyLimit, double spentAmount) {
-        this.category = category;
-        this.monthlyLimit = monthlyLimit;
-        this.spentAmount = spentAmount;
-    }
+    public Budget() {}
 
     public Long getId() {
         return id;
@@ -51,5 +51,13 @@ public class Budget {
 
     public void setSpentAmount(double spentAmount) {
         this.spentAmount = spentAmount;
+    }
+
+    public String getUserEmail() {
+        return userEmail;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
     }
 }

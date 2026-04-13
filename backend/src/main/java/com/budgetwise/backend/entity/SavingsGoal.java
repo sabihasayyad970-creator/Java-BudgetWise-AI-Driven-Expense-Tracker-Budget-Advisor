@@ -11,39 +11,31 @@ public class SavingsGoal {
     private Long id;
 
     private String goalName;
+    private Double targetAmount;
+    private Double savedAmount;
 
-    private double targetAmount;
+    // ✅ NEW FIELD
+    private Long userId;
 
-    private double savedAmount;
+    public SavingsGoal() {}
 
-    public SavingsGoal() {
-    }
+    public Long getId() { return id; }
 
-    public Long getId() {
-        return id;
-    }
+    public String getGoalName() { return goalName; }
 
-    public String getGoalName() {
-        return goalName;
-    }
+    public Double getTargetAmount() { return targetAmount; }
 
-    public void setGoalName(String goalName) {
-        this.goalName = goalName;
-    }
+    public Double getSavedAmount() { return savedAmount; }
 
-    public double getTargetAmount() {
-        return targetAmount;
-    }
+    public Long getUserId() { return userId; } // ✅ NEW
 
-    public void setTargetAmount(double targetAmount) {
-        this.targetAmount = targetAmount;
-    }
+    public void setId(Long id) { this.id = id; }
 
-    public double getSavedAmount() {
-        return savedAmount;
-    }
+    public void setGoalName(String goalName) { this.goalName = goalName; }
 
-    public void setSavedAmount(double savedAmount) {
-        this.savedAmount = savedAmount;
-    }
+    public void setTargetAmount(Double targetAmount) { this.targetAmount = targetAmount; }
+
+    public void setSavedAmount(Double savedAmount) { this.savedAmount = savedAmount; }
+
+    public void setUserId(Long userId) { this.userId = userId; } // ✅ NEW
 }

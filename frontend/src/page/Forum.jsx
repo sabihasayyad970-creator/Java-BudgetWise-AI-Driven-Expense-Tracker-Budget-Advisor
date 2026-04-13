@@ -1,37 +1,83 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 function Forum() {
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.id;
 
   const [posts, setPosts] = useState([]);
   const [text, setText] = useState("");
 
-  const addPost = () => {
+  // ✅ LOAD POSTS FROM BACKEND
+  const loadPosts = async () => {
+    try {
+      if (!userId) return;
+
+      const res = await axios.get(
+        `http://localhost:8080/api/forum/user/${userId}`
+      );
+
+      setPosts(res.data);
+
+    } catch (error) {
+      console.error("Load posts error:", error);
+    }
+  };
+
+  useEffect(() => {
+    loadPosts();
+  }, [userId]);
+
+  // ✅ ADD POST
+  const addPost = async () => {
     if (!text) return;
 
-    setPosts([
-      {
+    try {
+
+      await axios.post("http://localhost:8080/api/forum", {
         content: text,
-        likes: 0,
-        comments: []
-      },
-      ...posts
-    ]);
+        userId: userId
+      });
 
-    setText("");
+      setText("");
+      loadPosts();
+
+    } catch (error) {
+      console.error("Post error:", error);
+    }
   };
 
-  const likePost = (index) => {
-    const updated = [...posts];
-    updated[index].likes++;
-    setPosts(updated);
+  // ✅ LIKE POST
+  const likePost = async (id) => {
+    try {
+      await axios.put(
+        `http://localhost:8080/api/forum/like/${id}`
+      );
+      loadPosts();
+    } catch (error) {
+      console.error("Like error:", error);
+    }
   };
 
-  const addComment = (index, comment) => {
+  // ✅ ADD COMMENT
+  const addComment = async (id, comment) => {
     if (!comment) return;
 
-    const updated = [...posts];
-    updated[index].comments.push(comment);
-    setPosts(updated);
+    try {
+      await axios.put(
+        `http://localhost:8080/api/forum/comment/${id}`,
+        comment,
+        {
+          headers: { "Content-Type": "text/plain" }
+        }
+      );
+
+      loadPosts();
+
+    } catch (error) {
+      console.error("Comment error:", error);
+    }
   };
 
   return (
@@ -45,12 +91,12 @@ function Forum() {
       />
       <button onClick={addPost}>Post</button>
 
-      {posts.map((post, i) => (
-        <div key={i} style={{ marginTop: 15, padding: 10, border: "1px solid #ccc" }}>
-          
+      {posts.map((post) => (
+        <div key={post.id} style={{ marginTop: 15, padding: 10, border: "1px solid #ccc" }}>
+
           <p>{post.content}</p>
 
-          <button onClick={() => likePost(i)}>
+          <button onClick={() => likePost(post.id)}>
             👍 {post.likes}
           </button>
 
@@ -58,7 +104,7 @@ function Forum() {
             placeholder="Add comment"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
-                addComment(i, e.target.value);
+                addComment(post.id, e.target.value);
                 e.target.value = "";
               }
             }}
@@ -70,6 +116,7 @@ function Forum() {
 
         </div>
       ))}
+
     </div>
   );
 }

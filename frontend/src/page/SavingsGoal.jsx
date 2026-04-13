@@ -1,62 +1,79 @@
 import React, { useState, useEffect } from "react";
 import "../styles/SavingsGoal.css";
-import { getGoals, createGoal, deleteGoal } from "../services/savingsService.js";
+import { getGoals, createGoal, deleteGoal } from "../services/savingsService";
 
 function SavingsGoal() {
+
+  // ✅ SAFE USER FETCH (no crash)
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const userId = user?.id;
 
   const [goals, setGoals] = useState([]);
   const [goalName, setGoalName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   const [savedAmount, setSavedAmount] = useState("");
 
+  // ✅ LOAD GOALS SAFELY
+  const loadGoals = async () => {
+    try {
+      if (!userId) return;
+
+      const res = await getGoals(userId);
+      setGoals(res?.data || []);
+    } catch (error) {
+      console.error("Error loading goals:", error);
+    }
+  };
+
   useEffect(() => {
     loadGoals();
-  }, []);
+  }, [userId]);
 
-  const loadGoals = () => {
-    getGoals()
-      .then((res) => {
-        setGoals(res.data);
-      })
-      .catch((error) => {
-        console.error("Error loading goals:", error);
-      });
-  };
-
-  const handleSubmit = (e) => {
+  // ✅ ADD GOAL
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!goalName || !targetAmount || !savedAmount) return;
+
     const goal = {
-      goalName: goalName,
+      goalName,
       targetAmount: Number(targetAmount),
-      savedAmount: Number(savedAmount)
+      savedAmount: Number(savedAmount),
+      userId
     };
 
-    createGoal(goal)
-      .then(() => {
-        setGoalName("");
-        setTargetAmount("");
-        setSavedAmount("");
-        loadGoals();
-      })
-      .catch((error) => {
-        console.error("Error creating goal:", error);
-      });
+    try {
+      await createGoal(goal);
+
+      setGoalName("");
+      setTargetAmount("");
+      setSavedAmount("");
+
+      loadGoals();
+    } catch (error) {
+      console.error("Error creating goal:", error);
+    }
   };
 
-  const removeGoal = (id) => {
-    deleteGoal(id)
-      .then(() => loadGoals())
-      .catch((error) => {
-        console.error("Error deleting goal:", error);
-      });
+  // ✅ DELETE GOAL
+  const removeGoal = async (id) => {
+    try {
+      await deleteGoal(id);
+      loadGoals();
+    } catch (error) {
+      console.error("Error deleting goal:", error);
+    }
   };
+
+  // ✅ SAFETY: if no user, don't crash
+  if (!userId) {
+    return <p>Please login to view savings goals</p>;
+  }
 
   return (
     <div className="goal-container">
 
-      <h2>Savings Goals</h2>
-
+      {/* FORM */}
       <form className="goal-form" onSubmit={handleSubmit}>
 
         <input
@@ -83,23 +100,28 @@ function SavingsGoal() {
 
       </form>
 
-      <ul className="goal-list">
+      {/* LIST */}
+      <div className="goal-list">
 
-        {goals.map((g) => (
-          <li key={g.id} className="goal-item">
+        {goals.length === 0 ? (
+          <p style={{ marginTop: "10px" }}>No goals added</p>
+        ) : (
+          goals.map((g) => (
+            <div key={g.id} className="goal-item">
 
-            <span>
-              {g.goalName} | Target: ₹{g.targetAmount} | Saved: ₹{g.savedAmount}
-            </span>
+              <span>
+                {g.goalName} | ₹{g.savedAmount} / ₹{g.targetAmount}
+              </span>
 
-            <button onClick={() => removeGoal(g.id)}>
-              Delete
-            </button>
+              <button onClick={() => removeGoal(g.id)}>
+                Delete
+              </button>
 
-          </li>
-        ))}
+            </div>
+          ))
+        )}
 
-      </ul>
+      </div>
 
     </div>
   );

@@ -1,14 +1,17 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable"; // ✅ FIXED IMPORT
+import autoTable from "jspdf-autotable";
 import axios from "axios";
 
 const FinancialReport = ({ totalIncome, totalExpense, prediction }) => {
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.id;
 
   const formatCurrency = (value) => {
     return "Rs. " + Number(value || 0).toLocaleString("en-IN");
   };
 
-  // ✅ PDF DOWNLOAD (FIXED)
+  // ✅ PDF DOWNLOAD
   const downloadPDF = () => {
     const doc = new jsPDF();
 
@@ -21,7 +24,7 @@ const FinancialReport = ({ totalIncome, totalExpense, prediction }) => {
     doc.setFontSize(11);
     doc.text(`Date: ${today}`, 14, 30);
 
-    autoTable(doc, {   // ✅ FIXED
+    autoTable(doc, {
       startY: 40,
       head: [["Description", "Amount"]],
       body: [
@@ -37,7 +40,7 @@ const FinancialReport = ({ totalIncome, totalExpense, prediction }) => {
       }
     });
 
-    let y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 60; // ✅ SAFE FIX
+    let y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 60;
 
     doc.text("AI Analysis:", 14, y);
 
@@ -58,11 +61,17 @@ const FinancialReport = ({ totalIncome, totalExpense, prediction }) => {
     doc.save("BudgetWise_Report.pdf");
   };
 
-  // ✅ CSV DOWNLOAD (UNCHANGED)
+  // ✅ CSV DOWNLOAD (USER-SPECIFIC)
   const downloadCSV = async () => {
     try {
-      const incomeRes = await axios.get("http://localhost:8080/api/income");
-      const expenseRes = await axios.get("http://localhost:8080/api/expenses");
+
+      const incomeRes = await axios.get(
+        `http://localhost:8080/api/income/user/${userId}`
+      );
+
+      const expenseRes = await axios.get(
+        `http://localhost:8080/api/expenses/user/${userId}`
+      );
 
       let csv = "Type,Amount,Date\n";
 
@@ -87,17 +96,27 @@ const FinancialReport = ({ totalIncome, totalExpense, prediction }) => {
     }
   };
 
-  // ✅ BACKUP (UNCHANGED)
+  // ✅ BACKUP (USER-SPECIFIC)
   const backupData = async () => {
     try {
+
+      const incomeRes = await axios.get(
+        `http://localhost:8080/api/income/user/${userId}`
+      );
+
+      const expenseRes = await axios.get(
+        `http://localhost:8080/api/expenses/user/${userId}`
+      );
+
       await axios.post("http://localhost:8080/api/cloud/backup", {
-        income: totalIncome,
-        expense: totalExpense,
+        income: incomeRes.data,
+        expense: expenseRes.data,
         savings: totalIncome - totalExpense,
         prediction: prediction
       });
 
       alert("Backup Successful ✅");
+
     } catch {
       alert("Backup Failed ❌");
     }

@@ -1,5 +1,9 @@
 package com.budgetwise.backend.controller;
 
+import com.budgetwise.backend.entity.User;
+import com.budgetwise.backend.repository.UserRepository;
+import com.budgetwise.backend.security.JwtUtil;
+
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 
@@ -12,18 +16,30 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class CloudBackupController {
 
+    private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
+
+    public CloudBackupController(UserRepository userRepository,
+                                 JwtUtil jwtUtil) {
+        this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
+    }
+
     @PostMapping("/backup")
-    public ResponseEntity<?> backupData(@RequestBody Map<String, Object> data) {
+    public ResponseEntity<?> backupData(@RequestBody Map<String, Object> data,
+                                        @RequestHeader("Authorization") String token) {
 
         try {
-            // Create backup folder if not exists
-            File folder = new File("backup");
-            if (!folder.exists()) {
-                folder.mkdir();
-            }
+            String email = jwtUtil.extractUsername(token.substring(7));
 
-            // Create file
-            File file = new File("backup/finance_backup.json");
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            File folder = new File("backup");
+            if (!folder.exists()) folder.mkdir();
+
+            // ✅ USER-SPECIFIC FILE
+            File file = new File("backup/finance_backup_" + user.getId() + ".json");
 
             FileWriter writer = new FileWriter(file);
             writer.write(data.toString());

@@ -50,7 +50,14 @@ function Profile() {
 
   const handleSave = () => {
 
-    localStorage.setItem("user", JSON.stringify(user));
+    const existingUser = JSON.parse(localStorage.getItem("user"));
+
+    const updatedUser = {
+      ...existingUser,   // keep token + id
+      ...user
+    };
+
+    localStorage.setItem("user", JSON.stringify(updatedUser));
 
     alert("Profile Updated Successfully!");
 
@@ -64,7 +71,6 @@ function Profile() {
 
         <h2>My Profile</h2>
 
-        {/* Profile Image */}
         <div className="profile-image">
           <img
             src={
@@ -80,7 +86,6 @@ function Profile() {
           )}
         </div>
 
-        {/* Profile Details */}
         <div className="profile-details">
 
           <label>Name</label>
@@ -108,8 +113,6 @@ function Profile() {
             disabled={!isEditing}
             onChange={handleChange}
           />
-
-          {/* NEW FIELDS */}
 
           <label>Monthly Income</label>
           <input
@@ -140,7 +143,6 @@ function Profile() {
 
         </div>
 
-        {/* Buttons */}
         <div className="profile-buttons">
           {!isEditing ? (
             <button onClick={() => setIsEditing(true)}>
